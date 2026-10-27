@@ -1,0 +1,552 @@
+# Hand-computed p-code cases for the MELPS 740 module (test/emu-test.sh).
+# Code is written at ram:1000; S starts at FF, all flags at 0, registers at 0.
+# "set ram:<addr>[/n] <value>" little-endian n-byte memory; "expect" lists results.
+# Stack: zero page, push = M(S) <- byte, S <- S-1; JSR pushes PCH then PCL of the last byte.
+# Results below were worked out from the Series 740 User's Manual (1989), not from the module.
+
+case adc_bin_overflow
+code 6950
+set A 0x50
+expect A 0xa0
+expect V 1
+expect C 0
+expect N 1
+expect Z 0
+end
+
+case adc_carry_wrap
+code 6901
+set A 0xff
+set C 1
+expect A 0x01
+expect C 1
+expect V 0
+expect Z 0
+end
+
+case adc_decimal
+code 6928
+set A 0x19
+set D 1
+expect A 0x47
+expect C 0
+end
+
+case adc_decimal_carry_out
+code 6901
+set A 0x99
+set D 1
+expect A 0x00
+expect C 1
+expect Z 1
+end
+
+case adc_decimal_carry_in
+code 6946
+set A 0x58
+set D 1
+set C 1
+expect A 0x05
+expect C 1
+end
+
+case sbc_binary_borrow
+code e9f0
+set A 0x50
+set C 1
+expect A 0x60
+expect C 0
+expect V 0
+expect N 0
+end
+
+case sbc_borrow_in
+code e900
+set A 0x00
+expect A 0xff
+expect C 0
+expect N 1
+end
+
+case sbc_overflow
+code e901
+set A 0x80
+set C 1
+expect A 0x7f
+expect V 1
+expect C 1
+end
+
+case sbc_decimal
+code e912
+set A 0x46
+set C 1
+set D 1
+expect A 0x34
+expect C 1
+end
+
+case sbc_decimal_borrow
+code e901
+set A 0x00
+set C 1
+set D 1
+expect A 0x99
+expect C 0
+end
+
+case cmp_equal_and_less
+code c930
+set A 0x30
+expect C 1
+expect Z 1
+expect N 0
+end
+
+case cmp_less
+code c920
+set A 0x10
+expect C 0
+expect Z 0
+expect N 1
+end
+
+case t_adc_memory_x
+code 6903
+set T 1
+set X 0x10
+set ram:10 0x05
+set A 0x77
+expect ram:10 0x08
+expect A 0x77
+expect C 0
+end
+
+case t_lda_stores_to_memory
+code a95a
+set T 1
+set X 0x20
+set A 0x11
+expect ram:20 0x5a
+expect A 0x11
+end
+
+case t_and_ora_eor
+code 293c09034960
+set T 1
+set X 0x30
+set ram:30 0xf0
+expect ram:30 0x53
+end
+
+case t_cmp_compares_memory
+code c910
+set T 1
+set X 5
+set ram:5 0x10
+set A 0x99
+expect Z 1
+expect C 1
+expect ram:5 0x10
+end
+
+case t_sbc_memory_x
+code e902
+set T 1
+set X 4
+set C 1
+set ram:4 0x09
+set A 0x55
+expect ram:4 0x07
+expect A 0x55
+end
+
+case set_and_clt
+code 3212
+expect T 0
+end
+
+case set_flag
+code 32
+expect T 1
+end
+
+case ldm_immediate_to_zp
+code 3c5a40
+expect ram:40 0x5a
+end
+
+case rrf_swaps_nibbles
+code 8241
+set ram:41 0xa5
+set C 1
+expect ram:41 0x5a
+expect C 1
+end
+
+case com_complements
+code 4442
+set ram:42 0x0f
+expect ram:42 0xf0
+expect N 1
+expect Z 0
+end
+
+case tst_flags_only
+code 6443
+expect Z 1
+expect N 0
+expect ram:43 0
+end
+
+case seb_clb_zero_page
+code 0f44ef441f44
+expect ram:44 0x80
+end
+
+case seb_clb_accumulator
+code 0b8b1b
+expect A 0x10
+end
+
+case bbs_a_taken
+code 6302a211a022
+set A 0x08
+expect X 0
+expect Y 0x22
+end
+
+case bbs_a_not_taken
+code 6302a211a022
+expect X 0x11
+expect Y 0x22
+end
+
+case bbc_a_taken
+code 7302a211a022
+expect X 0
+expect Y 0x22
+end
+
+case bbs_zp_taken
+code 075002a211a022
+set ram:50 0x01
+expect X 0
+expect Y 0x22
+end
+
+case bbc_zp_not_taken
+code 175002a211a022
+set ram:50 0x01
+expect X 0x11
+expect Y 0x22
+end
+
+case bra_taken
+code 8002a211a022
+expect X 0
+expect Y 0x22
+end
+
+case bne_taken_beq_not
+code f002d002a211a022
+expect X 0
+expect Y 0x22
+end
+
+case bcs_bcc
+code b002a211a022
+set C 1
+expect X 0
+expect Y 0x22
+end
+
+case bmi_bpl_bvs_bvc
+code 3002a2119002a0227002a933
+set N 1
+expect X 0
+expect Y 0
+expect A 0x33
+end
+
+case jsr_rts_stack
+code 200710a022eaeaa21160
+main 5
+expect X 0x11
+expect Y 0x22
+expect S 0xff
+expect ram:ff 0x10
+expect ram:fe 0x02
+end
+
+case inc_dec_accumulator
+code 3a
+set A 0xff
+expect A 0
+expect Z 1
+end
+
+case dec_accumulator
+code 1a
+expect A 0xff
+expect N 1
+end
+
+case asl_a
+code 0a
+set A 0x81
+expect A 0x02
+expect C 1
+end
+
+case lsr_a
+code 4a
+set A 0x01
+expect A 0
+expect C 1
+expect Z 1
+end
+
+case rol_a
+code 2a
+set A 0x80
+set C 1
+expect A 0x01
+expect C 1
+end
+
+case ror_a
+code 6a
+set A 0x01
+set C 1
+expect A 0x80
+expect C 1
+expect N 1
+end
+
+case lda_indirect_x
+code a110
+set X 2
+set ram:12/2 0x0300
+set ram:300 0x77
+expect A 0x77
+end
+
+case lda_indirect_y
+code b120
+set Y 5
+set ram:20/2 0x0300
+set ram:305 0x66
+expect A 0x66
+end
+
+case lda_zp_x_wraps
+code b5ff
+set X 2
+set ram:01 0x42
+set ram:101 0x99
+expect A 0x42
+end
+
+case lda_indirect_x_pointer_wraps_in_zero_page
+code a1fe
+set X 1
+set ram:ff 0x00
+set ram:00 0x03
+set ram:100 0x07
+set ram:300 0x31
+set ram:700 0x32
+expect A 0x31
+end
+
+case sta_abs_y
+code 990003
+set Y 4
+set A 0x5c
+expect ram:304 0x5c
+end
+
+case stx_zp_y
+code 9650
+set Y 3
+set X 0x6d
+expect ram:53 0x6d
+end
+
+case ldx_abs_y
+code be0003
+set Y 2
+set ram:302 0x81
+expect X 0x81
+expect N 1
+end
+
+case tsx_txs
+code ba9a
+set X 0
+expect X 0xff
+expect S 0xff
+expect N 1
+end
+
+case txs_sets_stack
+code 9a
+set X 0x80
+expect S 0x80
+end
+
+case inx_wraps
+code e8
+set X 0xff
+expect X 0
+expect Z 1
+end
+
+case dey
+code 88
+expect Y 0xff
+expect N 1
+end
+
+case cpx_equal
+code e005
+set X 5
+expect Z 1
+expect C 1
+end
+
+case bit_zero_page
+code 2460
+set ram:60 0xc0
+set A 0x01
+expect N 1
+expect V 1
+expect Z 1
+end
+
+case php_plp
+code 081828
+set N 1
+set T 1
+set I 1
+set C 1
+expect ram:ff 0xa5
+expect S 0xff
+expect C 1
+expect T 1
+expect N 1
+end
+
+case pha_pla
+code 48a90068
+main 4
+set A 0x80
+expect A 0x80
+expect N 1
+expect S 0xff
+end
+
+case jmp_indirect_zero_page
+code b250a299a022
+set ram:50/2 0x1004
+expect X 0
+expect Y 0x22
+end
+
+case jmp_indirect_absolute_crosses_page
+code 6cff02a299a022
+set ram:2ff/2 0x1005
+main 7
+expect X 0
+expect Y 0x22
+end
+
+case brk_pushes_and_rti_returns
+code 00eaa022
+set C 1
+set Z 1
+set ram:fff4/2 0x1010
+set ram:1010 0x40
+expect Y 0x22
+expect S 0xff
+expect C 1
+expect B 1
+expect ram:ff 0x10
+expect ram:fe 0x02
+expect ram:fd 0x13
+end
+
+case jsr_special_page_default default
+code 2220a022
+set ram:1f20/3 0x6011a2
+expect X 0x11
+expect Y 0x22
+expect S 0xff
+expect ram:ff 0x10
+expect ram:fe 0x01
+end
+
+case jsr_special_page_ff wit muldiv
+code 2220a022
+set ram:ff20/3 0x6011a2
+expect X 0x11
+expect Y 0x22
+end
+
+case jsr_zero_page_indirect
+code 0250a022
+set ram:50/2 0x1020
+set ram:1020/3 0x6011a2
+expect X 0x11
+expect Y 0x22
+end
+
+case mul_stores_high_on_stack muldiv
+code 6210
+set X 2
+set ram:12 0x20
+set A 0x10
+expect A 0x00
+expect ram:ff 0x02
+expect S 0xfe
+end
+
+case div_quotient_and_remainder muldiv
+code e210
+set X 2
+set ram:12/2 0x0064
+set A 0x07
+expect A 0x0e
+expect ram:ff 0xfd
+expect S 0xfe
+end
+
+case stack_page_one_pha_pla
+code 48a90068
+set A 0x80
+set SPH 1
+expect A 0x80
+expect ram:1ff 0x80
+expect ram:ff 0x00
+expect S 0xff
+end
+
+case stack_page_one_jsr
+code 200710
+main 7
+set SPH 1
+expect ram:1ff 0x10
+expect ram:1fe 0x02
+expect ram:ff 0x00
+expect S 0xfd
+end
+
+case stack_page_one_rts
+code 60
+main 0x42
+set SPH 1
+set S 0xfd
+set ram:1fe/2 0x1041
+set ram:fe/2 0x2222
+expect S 0xff
+end

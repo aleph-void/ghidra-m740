@@ -1,0 +1,11 @@
+/build
+/dist
+*.sla
+.gradle
+.gradle-userhome/
+.ghidra-home/
+__pycache__/
+*.pyc
+lib/*.jar
+lib/*.jar.tmp
+data/languages/*.lock
